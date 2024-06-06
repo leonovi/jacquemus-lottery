@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jacquemus Lottery Draw</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+            background-size: cover;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            margin: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+        .logo {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+        .cta {
+            font-size: 1.2em;
+            margin-top: 10px;
+            margin-bottom: 20px;
+            color: #e74c3c;
+            font-weight: 600;
+        }
+        button {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #c0392b;
+        }
+        .geolocate-btn {
+            margin-top: 10px;
+            background-color: #3498db;
+        }
+        .geolocate-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="Logo-Jacquemus.svg.png" alt="Jacquemus Logo" class="logo">
+        <h2>Jacquemus Lottery Draw</h2>
+        <p class="cta">Everybody wants to be a winner, show us what you got.</p>
+        <form id="accessForm">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="surname">Surname</label>
+                <input type="text" id="surname" name="surname" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="position">Current Position</label>
+                <input type="text" id="position" name="position" required placeholder="Enter Tokyo, London, or Reykjavik">
+                <button type="button" class="geolocate-btn" onclick="geolocate()">Geolocate Me</button>
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        function geolocate() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${position.coords.latitude}&lon=${position.coords.longitude}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                const city = data.address.city || data.address.town || data.address.village;
+                                document.getElementById('position').value = city;
+                            })
+                            .catch(error => {
+                                console.error('Error fetching location:', error);
+                                alert('Unable to retrieve location. Please enter your city manually.');
+                            });
+                    },
+                    function(error) {
+                        console.error('Error with geolocation:', error);
+                        alert('Unable to retrieve location. Please enter your city manually.');
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        document.getElementById('accessForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const name = document.getElementById('name').value;
+            const surname = document.getElementById('surname').value;
+            const email = document.getElementById('email').value;
+            const position = document.getElementById('position').value.toLowerCase();
+
+            const validCities = ['tokyo', 'london', 'reykjavik'];
+            if (!validCities.includes(position)) {
+                alert('Sorry, you must be in Tokyo, London, or Reykjavik to participate.');
+                return;
+            }
+
+            const randomNumber = Math.floor(Math.random() * 100) + 1;
+            let nearestLocation = '';
+
+            switch(position) {
+                case 'tokyo':
+                    nearestLocation = 'Tokyo';
+                    break;
+                case 'london':
+                    nearestLocation = 'London';
+                    break;
+                case 'reykjavik':
+                    nearestLocation = 'Reykjavik';
+                    break;
+            }
+
+            document.getElementById('result').innerText = `Hello, ${name} ${surname} from ${position.charAt(0).toUpperCase() + position.slice(1)}. Your random number is: ${randomNumber}. Come pick your prize at the nearest location in ${nearestLocation}.`;
+
+            // Send email with lottery number (requires backend)
+            fetch('http://your-backend-url/send-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, surname, email, randomNumber, position, nearestLocation })
+            }).then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      alert('An email with your lottery number has been sent to ' + email);
+                  } else {
+                      alert('There was an error sending the email.');
+                  }
+              });
+        });
+    </script>
+</body>
+</html>
